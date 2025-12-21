@@ -1,56 +1,70 @@
-/// @ref gtc_color_space
-/// @file glm/gtc/color_space.hpp
+/// @ref gtx_color_space
+/// @file glm/gtx/color_space.hpp
 ///
 /// @see core (dependence)
-/// @see gtc_color_space (dependence)
 ///
-/// @defgroup gtc_color_space GLM_GTC_color_space
-/// @ingroup gtc
+/// @defgroup gtx_color_space GLM_GTX_color_space
+/// @ingroup gtx
 ///
-/// Include <glm/gtc/color_space.hpp> to use the features of this extension.
+/// Include <glm/gtx/color_space.hpp> to use the features of this extension.
 ///
-/// Allow to perform bit operations on integer values
+/// Related to RGB to HSV conversions and operations.
 
 #pragma once
 
-// Dependencies
-#include "../detail/setup.hpp"
-#include "../detail/qualifier.hpp"
-#include "../exponential.hpp"
-#include "../vec3.hpp"
-#include "../vec4.hpp"
-#include <limits>
+// Dependency:
+#include "../glm.hpp"
 
-#if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
-#	pragma message("GLM: GLM_GTC_color_space extension included")
+#ifndef GLM_ENABLE_EXPERIMENTAL
+#	error "GLM: GLM_GTX_color_space is an experimental extension and may change in the future. Use #define GLM_ENABLE_EXPERIMENTAL before including it, if you really want to use it."
+#elif GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
+#	pragma message("GLM: GLM_GTX_color_space extension included")
 #endif
 
 namespace glm
 {
-	/// @addtogroup gtc_color_space
+	/// @addtogroup gtx_color_space
 	/// @{
 
-	/// Convert a linear color to sRGB color using a standard gamma correction.
-	/// IEC 61966-2-1:1999 / Rec. 709 specification https://www.w3.org/Graphics/Color/srgb
-	template<length_t L, typename T, qualifier Q>
-	GLM_FUNC_DECL vec<L, T, Q> convertLinearToSRGB(vec<L, T, Q> const& ColorLinear);
+	/// Converts a color from HSV color space to its color in RGB color space.
+	/// @see gtx_color_space
+	template<typename T, qualifier Q>
+	GLM_FUNC_DECL vec<3, T, Q> rgbColor(
+		vec<3, T, Q> const& hsvValue);
 
-	/// Convert a linear color to sRGB color using a custom gamma correction.
-	/// IEC 61966-2-1:1999 / Rec. 709 specification https://www.w3.org/Graphics/Color/srgb
-	template<length_t L, typename T, qualifier Q>
-	GLM_FUNC_DECL vec<L, T, Q> convertLinearToSRGB(vec<L, T, Q> const& ColorLinear, T Gamma);
+	/// Converts a color from RGB color space to its color in HSV color space.
+	/// @see gtx_color_space
+	template<typename T, qualifier Q>
+	GLM_FUNC_DECL vec<3, T, Q> hsvColor(
+		vec<3, T, Q> const& rgbValue);
 
-	/// Convert a sRGB color to linear color using a standard gamma correction.
-	/// IEC 61966-2-1:1999 / Rec. 709 specification https://www.w3.org/Graphics/Color/srgb
-	template<length_t L, typename T, qualifier Q>
-	GLM_FUNC_DECL vec<L, T, Q> convertSRGBToLinear(vec<L, T, Q> const& ColorSRGB);
+	/// Build a saturation matrix.
+	/// @see gtx_color_space
+	template<typename T>
+	GLM_FUNC_DECL mat<4, 4, T, defaultp> saturation(
+		T const s);
 
-	/// Convert a sRGB color to linear color using a custom gamma correction.
-	// IEC 61966-2-1:1999 / Rec. 709 specification https://www.w3.org/Graphics/Color/srgb
-	template<length_t L, typename T, qualifier Q>
-	GLM_FUNC_DECL vec<L, T, Q> convertSRGBToLinear(vec<L, T, Q> const& ColorSRGB, T Gamma);
+	/// Modify the saturation of a color.
+	/// @see gtx_color_space
+	template<typename T, qualifier Q>
+	GLM_FUNC_DECL vec<3, T, Q> saturation(
+		T const s,
+		vec<3, T, Q> const& color);
+
+	/// Modify the saturation of a color.
+	/// @see gtx_color_space
+	template<typename T, qualifier Q>
+	GLM_FUNC_DECL vec<4, T, Q> saturation(
+		T const s,
+		vec<4, T, Q> const& color);
+
+	/// Compute color luminosity associating ratios (0.33, 0.59, 0.11) to RGB canals.
+	/// @see gtx_color_space
+	template<typename T, qualifier Q>
+	GLM_FUNC_DECL T luminosity(
+		vec<3, T, Q> const& color);
 
 	/// @}
-} //namespace glm
+}//namespace glm
 
 #include "color_space.inl"
