@@ -40,6 +40,7 @@ add_executable(main ${SOURCE_FILES})
 # =======================
 target_include_directories(main PRIVATE
     ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/vendor
 
     # --- GLAD INCLUDE ---
     ${GLAD_ROOT}/include
