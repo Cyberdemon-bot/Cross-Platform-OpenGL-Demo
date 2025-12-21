@@ -1,6 +1,6 @@
 # Cross-Platform OpenGL Demo 
 
-A minimal OpenGL demo project with SDL2 + Imgui + Glad, configured for both macOS and Windows using CMake.
+A minimal OpenGL demo project with SDL2 + Imgui + GLAD + GLM, configured for both macOS and Windows using CMake.
 
 ## ✨ Features
 
