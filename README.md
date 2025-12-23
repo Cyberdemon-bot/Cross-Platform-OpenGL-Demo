@@ -47,7 +47,7 @@ If you don't have Homebrew or prefer manual installation:
    - Type: `~/Library/Frameworks`
    - If the folder doesn't exist, create it
    - Drag `*.framework` from the mounted DMG into this folder
-   - open terminal and run sudo xattr -rd com.apple.quarantine /Library/Frameworks/SDL2.framework(for admin) or xattr -rd com.apple.quarantine path/to/your/SDL2.framework(personal folder)
+   - open terminal and run sudo xattr -rd com.apple.quarantine /Library/Frameworks/SDL2.framework(for admin) or xattr -rd com.apple.quarantine ~/Library/Frameworks/SDL2.framework(personal folder)
 
 ### Windows Setup
 
