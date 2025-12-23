@@ -82,9 +82,33 @@ bool Application::Init(const char* title, int width, int height) {
 }
 
 void Application::Run() {
+    // Biến để tính FPS
+    Uint32 lastTime = SDL_GetTicks(); // Lấy thời gian hiện tại (ms)
+    int frameCount = 0;
+    
+    // Lưu lại tiêu đề gốc để nối chuỗi
+    std::string originalTitle = "OpenGL 4.1 Viewer"; 
+
     while (m_IsRunning) {
         HandleEvents();
         Render();
+
+        // --- TÍNH TOÁN FPS ---
+        frameCount++; // Tăng số frame đã vẽ
+        Uint32 currentTime = SDL_GetTicks();
+        
+        // Nếu đã trôi qua 1000ms (1 giây)
+        if (currentTime - lastTime >= 1000) {
+            // Tạo chuỗi tiêu đề mới: "Tên App - FPS: 60"
+            std::string title = originalTitle + " - FPS: " + std::to_string(frameCount);
+            
+            // Set lại tiêu đề cửa sổ
+            SDL_SetWindowTitle(m_Window, title.c_str());
+            
+            // Reset bộ đếm
+            frameCount = 0;
+            lastTime = currentTime;
+        }
     }
 }
 
