@@ -46,9 +46,7 @@ bool Application::Init(const char* title, int width, int height) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-#ifdef __APPLE__
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-#endif
 
     m_Window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     m_Context = SDL_GL_CreateContext(m_Window);
@@ -170,6 +168,33 @@ void Application::Render() {
     ImGui::Separator();
     if (ImGui::Checkbox("Wireframe Mode", &m_Wireframe)) {
         glPolygonMode(GL_FRONT_AND_BACK, m_Wireframe ? GL_LINE : GL_FILL);
+    }
+    ImGui::Separator();
+    if (ImGui::Checkbox("Wireframe Mode", &m_Wireframe)) {
+        glPolygonMode(GL_FRONT_AND_BACK, m_Wireframe ? GL_LINE : GL_FILL);
+    }
+
+    // --- TEST ASSIMP (MỚI THÊM VÀO ĐÂY) ---
+    ImGui::Separator();
+    ImGui::Text("System Check:");
+    
+    // Nút bấm kiểm tra
+    if (ImGui::Button("Check Assimp Version")) {
+        // 1. Khởi tạo thử Importer (Kiểm tra link class C++)
+        Assimp::Importer importer;
+        
+        // 2. Lấy version (Kiểm tra link hàm C)
+        int major = aiGetVersionMajor();
+        int minor = aiGetVersionMinor();
+        int revision = aiGetVersionRevision();
+
+        // 3. In ra Terminal
+        std::cout << "[SUCCESS] Assimp linked correctly!" << std::endl;
+        std::cout << "   Version: " << major << "." << minor << "." << revision << std::endl;
+        
+        // (Optional) Hiển thị luôn lên tiêu đề cửa sổ cho oách
+        std::string title = "Assimp v" + std::to_string(major) + "." + std::to_string(minor) + " works!";
+        SDL_SetWindowTitle(m_Window, title.c_str());
     }
     ImGui::End();
 
