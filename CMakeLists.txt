@@ -16,6 +16,7 @@ set(SDL_ROOT    ${VENDOR_DIR}/SDL2)
 set(GLAD_ROOT   ${VENDOR_DIR}/glad)
 set(IMGUI_DIR   ${VENDOR_DIR}/imgui)
 set(ASSIMP_ROOT ${VENDOR_DIR}/assimp)
+set(STB_ROOT    ${VENDOR_DIR}/stb)
 
 # =======================
 # 2. SETUP SOURCES
@@ -25,6 +26,7 @@ file(GLOB SOURCE_FILES CONFIGURE_DEPENDS src/*.cpp)
 
 # 2.2 Source Glad
 list(APPEND SOURCE_FILES "${GLAD_ROOT}/src/glad.c")
+list(APPEND SOURCE_FILES "${STB_ROOT}/stb_image/src/stb_image.cpp")
 
 # 2.3 Source ImGui
 file(GLOB IMGUI_SOURCES 
@@ -56,13 +58,11 @@ target_include_directories(main PRIVATE
 
     # SDL2
     ${SDL_ROOT}/SDL/include
-    ${SDL_ROOT}/Image/include
     ${SDL_ROOT}/Mixer/include
-    ${SDL_ROOT}/TTF/include
     ${SDL_ROOT}/SDL/include/SDL2
-    ${SDL_ROOT}/Image/include/SDL2
     ${SDL_ROOT}/Mixer/include/SDL2
-    ${SDL_ROOT}/TTF/include/SDL2
+
+    ${STB_ROOT}/stb_image/include
 )
 
 # =======================
@@ -90,9 +90,7 @@ if (APPLE)
         target_link_options(main PRIVATE "-F/Library/Frameworks")
         target_link_libraries(main PRIVATE 
             "-framework SDL2" 
-            "-framework SDL2_image" 
             "-framework SDL2_mixer" 
-            "-framework SDL2_ttf"
             "-framework OpenGL"
             "-framework CoreFoundation"
             ${ASSIMP_MAC_LIB} # Link Assimp
@@ -100,16 +98,12 @@ if (APPLE)
     else()
         message(STATUS "macOS: System Frameworks NOT found. Fallback to Homebrew...")
         find_package(SDL2 REQUIRED)
-        find_package(SDL2_image REQUIRED)
         find_package(SDL2_mixer REQUIRED)
-        find_package(SDL2_ttf REQUIRED)
         find_package(OpenGL REQUIRED) 
 
         target_link_libraries(main PRIVATE 
             SDL2::SDL2 
-            SDL2_image::SDL2_image 
             SDL2_mixer::SDL2_mixer 
-            SDL2_ttf::SDL2_ttf
             OpenGL::GL
             ${ASSIMP_MAC_LIB} # Link Assimp
         )
@@ -128,16 +122,14 @@ elseif (WIN32)
     # 2. Thêm đường dẫn tìm thư viện
     target_link_directories(main PRIVATE
         ${SDL_ROOT}/SDL/lib
-        ${SDL_ROOT}/Image/lib
         ${SDL_ROOT}/Mixer/lib
-        ${SDL_ROOT}/TTF/lib
         ${ASSIMP_ROOT}/lib
     )
 
     # 3. Link thư viện
     target_link_libraries(main PRIVATE 
         SDL2main SDL2 
-        SDL2_image SDL2_mixer SDL2_ttf
+        SDL2_mixer
         opengl32
         ${ASSIMP_WIN_LIB} # Link file .lib của Assimp
     )
@@ -146,9 +138,7 @@ elseif (WIN32)
     add_custom_command(TARGET main POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${SDL_ROOT}/SDL/bin/SDL2.dll
-            ${SDL_ROOT}/Image/bin/SDL2_image.dll
             ${SDL_ROOT}/Mixer/bin/SDL2_mixer.dll
-            ${SDL_ROOT}/TTF/bin/SDL2_ttf.dll
             ${ASSIMP_WIN_DLL} # Copy file .dll của Assimp
             $<TARGET_FILE_DIR:main>
     )
