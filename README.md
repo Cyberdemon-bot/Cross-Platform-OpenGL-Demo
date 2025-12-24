@@ -47,8 +47,8 @@ If you don't have Homebrew or prefer manual installation:
    - Type: `~/Library/Frameworks`
    - If the folder doesn't exist, create it
    - Drag `*.framework` from the mounted DMG into this folder
-   - open terminal and run sudo xattr -rd com.apple.quarantine /Library/Frameworks/SDL2.framework(for admin) or xattr -rd com.apple.quarantine ~/Library/Frameworks/SDL2.framework(personal folder) to cancel macos checker on sdl framework
-   - in terminal, go to project folder and run find . -name "*.dylib" -exec xattr -d com.apple.quarantine {} \; -exec codesign --force --deep --sign - {} \; to cancel macos security mechanism on all binary file.
+   - open terminal and run sudo xattr -rd com.apple.quarantine /Library/Frameworks/SDL2.framework(for admin) or xattr -rd com.apple.quarantine ~/Library/Frameworks/SDL2.framework(personal folder) to disable macos checker on sdl framework
+   - in terminal, go to project folder and run find . -name "*.dylib" -exec xattr -d com.apple.quarantine {} \; -exec codesign --force --deep --sign - {} \; to disable macos security mechanism on all binary file.
 
 ### Windows Setup
 
