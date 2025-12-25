@@ -1,16 +1,13 @@
 #include "Application.h"
 #include <iostream>
 
-// --- SHADERS (OPENGL 4.1 CORE) ---
+// --- SHADERS (GIỮ NGUYÊN) ---
 const char* vertexShaderSource = R"(
     #version 410 core
     layout (location = 0) in vec3 aPos;
-    // layout (location = 1) in vec3 aNormal; 
-
     uniform mat4 u_Model;
     uniform mat4 u_View;
     uniform mat4 u_Projection;
-
     void main() {
         gl_Position = u_Projection * u_View * u_Model * vec4(aPos, 1.0);
     }
@@ -19,104 +16,109 @@ const char* vertexShaderSource = R"(
 const char* fragmentShaderSource = R"(
     #version 410 core
     out vec4 FragColor;
-    
     uniform vec4 u_Color; 
-
     void main() {
         FragColor = u_Color;
     }
 )";
 
+// Callback báo lỗi của GLFW
+void GLFWErrorCallback(int error, const char* description) {
+    std::cerr << "GLFW Error (" << error << "): " << description << std::endl;
+}
+
 Application::Application() 
-    : m_IsRunning(false), m_Window(nullptr), m_Context(nullptr), m_ShaderProgram(0) {}
+    : m_IsRunning(false), m_Window(nullptr), m_ShaderProgram(0) {}
 
 Application::~Application() { Clean(); }
 
 bool Application::Init(const char* title, int width, int height) {
     m_Width = width; m_Height = height;
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
-        std::cerr << "SDL Init Error: " << SDL_GetError() << std::endl;
+    // 1. Init GLFW
+    glfwSetErrorCallback(GLFWErrorCallback);
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW" << std::endl;
         return false;
     }
 
-    // --- SETUP OPENGL 4.1 CORE ---
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-    
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    // 2. Setup OpenGL Version (4.1 Core for Mac)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Bắt buộc cho Mac
+    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE); // Hỗ trợ Retina
 
-    // QUAN TRỌNG: SDL_WINDOW_ALLOW_HIGHDPI để hỗ trợ màn hình Retina sắc nét
-    m_Window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    if (!m_Window) return false;
+    // 3. Create Window
+    m_Window = glfwCreateWindow(width, height, title, NULL, NULL);
+    if (!m_Window) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return false;
+    }
 
-    m_Context = SDL_GL_CreateContext(m_Window);
-    SDL_GL_MakeCurrent(m_Window, m_Context);
-    
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+    glfwMakeContextCurrent(m_Window);
+    // Tắt V-Sync (0) hoặc Bật (1)
+    glfwSwapInterval(1); 
+
+    // 4. Init GLAD
+    // Lưu ý: cast sang GLADloadproc
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return false;
     }
 
     glEnable(GL_DEPTH_TEST); 
 
-    // Setup ImGui
+    // 5. Setup ImGui (Backend GLFW)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; 
-    
+    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Nếu muốn Multi-viewport
+
     ImGui::StyleColorsDark();
 
-    ImGui_ImplSDL2_InitForOpenGL(m_Window, m_Context);
+    // Init cho GLFW
+    ImGui_ImplGlfw_InitForOpenGL(m_Window, true); // true = install callbacks
     ImGui_ImplOpenGL3_Init("#version 410");
 
     InitGraphics();
-    LoadModelRaw("res/chess_pieces.glb"); // Nhớ check đường dẫn file
+    LoadModelRaw("res/chess_pieces.glb");
 
     m_IsRunning = true;
     return true;
 }
 
 void Application::Run() {
-    // Biến để tính FPS
-    Uint32 lastTime = SDL_GetTicks(); // Lấy thời gian hiện tại (ms)
+    // GLFW dùng double (giây) thay vì Uint32 (ms)
+    double lastTime = glfwGetTime(); 
     int frameCount = 0;
-    
-    // Lưu lại tiêu đề gốc để nối chuỗi
-    std::string originalTitle = "OpenGL 4.1 Viewer"; 
+    std::string originalTitle = "OpenGL 4.1 Viewer (GLFW)"; 
 
-    while (m_IsRunning) {
+    while (!glfwWindowShouldClose(m_Window) && m_IsRunning) {
         HandleEvents();
         Render();
 
-        // --- TÍNH TOÁN FPS ---
-        frameCount++; // Tăng số frame đã vẽ
-        Uint32 currentTime = SDL_GetTicks();
+        // --- TÍNH FPS ---
+        double currentTime = glfwGetTime();
+        frameCount++;
         
-        // Nếu đã trôi qua 1000ms (1 giây)
-        if (currentTime - lastTime >= 1000) {
-            // Tạo chuỗi tiêu đề mới: "Tên App - FPS: 60"
+        // Nếu qua 1.0 giây
+        if (currentTime - lastTime >= 1.0) {
             std::string title = originalTitle + " - FPS: " + std::to_string(frameCount);
-            
-            // Set lại tiêu đề cửa sổ
-            SDL_SetWindowTitle(m_Window, title.c_str());
-            
-            // Reset bộ đếm
+            glfwSetWindowTitle(m_Window, title.c_str());
             frameCount = 0;
             lastTime = currentTime;
         }
     }
 }
 
-void Application::InitGraphics() {
-    CreateShaderProgram();
-}
+void Application::InitGraphics() { CreateShaderProgram(); }
 
+// --- CreateShaderProgram và LoadModelRaw GIỮ NGUYÊN KHÔNG ĐỔI ---
 void Application::CreateShaderProgram() {
+    // (Copy y hệt code cũ, không thay đổi logic OpenGL)
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
@@ -148,12 +150,10 @@ void Application::CreateShaderProgram() {
 }
 
 void Application::LoadModelRaw(const char* path) {
+    // (Copy y hệt code cũ)
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path, 
-        aiProcess_Triangulate | 
-        aiProcess_FlipUVs |
-        aiProcess_PreTransformVertices 
-    );
+        aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_PreTransformVertices);
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cerr << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
@@ -172,18 +172,13 @@ void Application::LoadModelRaw(const char* path) {
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
         aiColor4D color(0.8f, 0.8f, 0.8f, 1.0f);
 
-        if (AI_SUCCESS != aiGetMaterialColor(material, AI_MATKEY_BASE_COLOR, &color)) {
+        if (AI_SUCCESS != aiGetMaterialColor(material, AI_MATKEY_BASE_COLOR, &color))
             aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &color);
-        }
 
         MeshPart part;
         part.indexOffset = currentIndexOffset;
         part.indexCount = mesh->mNumFaces * 3;
-        part.color[0] = color.r;
-        part.color[1] = color.g;
-        part.color[2] = color.b;
-        part.color[3] = color.a;
-        
+        part.color[0] = color.r; part.color[1] = color.g; part.color[2] = color.b; part.color[3] = color.a;
         m_MeshParts.push_back(part);
 
         for (unsigned int j = 0; j < mesh->mNumVertices; j++) {
@@ -191,14 +186,11 @@ void Application::LoadModelRaw(const char* path) {
             vertices.push_back(mesh->mVertices[j].y);
             vertices.push_back(mesh->mVertices[j].z);
         }
-
         for (unsigned int j = 0; j < mesh->mNumFaces; j++) {
             aiFace face = mesh->mFaces[j];
-            for (unsigned int k = 0; k < face.mNumIndices; k++) {
+            for (unsigned int k = 0; k < face.mNumIndices; k++)
                 indices.push_back(face.mIndices[k] + currentVertexOffset);
-            }
         }
-
         currentVertexOffset += mesh->mNumVertices;
         currentIndexOffset += mesh->mNumFaces * 3;
     }
@@ -217,30 +209,29 @@ void Application::LoadModelRaw(const char* path) {
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 }
+// -------------------------------------------------------------
 
 void Application::HandleEvents() {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        ImGui_ImplSDL2_ProcessEvent(&event);
-        if (event.type == SDL_QUIT) m_IsRunning = false;
-        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) m_IsRunning = false;
-        
-        // Lưu ý: Không cần set glViewport ở đây nữa, 
-        // vì ta sẽ lấy kích thước thực (DrawableSize) trong hàm Render mỗi frame.
-        if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
-            m_Width = event.window.data1;
-            m_Height = event.window.data2;
-        }
+    // GLFW đơn giản hơn SDL, chỉ cần poll
+    glfwPollEvents();
+
+    // Check nút Escape
+    if (glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        m_IsRunning = false;
+        glfwSetWindowShouldClose(m_Window, true);
     }
+
+    // Không cần xử lý Resize thủ công ở đây, 
+    // ta lấy FramebufferSize trực tiếp trong hàm Render
 }
 
 void Application::Render() {
-    // 1. Setup Frame UI
+    // 1. Setup Frame UI (GLFW backend)
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
+    ImGui_ImplGlfw_NewFrame(); // Thay SDL
     ImGui::NewFrame();
 
-    // UI Controls
+    // UI Controls (Giữ nguyên)
     ImGui::Begin("OpenGL 4.1 Viewer");
     ImGui::DragFloat("Scale", &m_Scale, 0.01f, 0.01f, 10.0f);
     ImGui::Checkbox("Auto Rotate", &m_AutoRotate);
@@ -255,21 +246,21 @@ void Application::Render() {
     if (ImGui::Button("Load Model")) LoadModelRaw(pathBuf);
     ImGui::End();
 
-    // 2. XỬ LÝ VIEWPORT CHUẨN (Fix lỗi HighDPI/Retina)
+    // 2. Viewport & Retina Support
     int displayW, displayH;
-    // Lấy kích thước Pixel thực tế (trên Mac Retina nó sẽ gấp đôi m_Width/m_Height)
-    SDL_GL_GetDrawableSize(m_Window, &displayW, &displayH);
+    // GLFW thay SDL_GL_GetDrawableSize
+    glfwGetFramebufferSize(m_Window, &displayW, &displayH);
     glViewport(0, 0, displayW, displayH);
 
-    // Xóa màn hình
     glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (!m_MeshParts.empty()) {
         glUseProgram(m_ShaderProgram);
-
-        // Tính Aspect Ratio dựa trên kích thước Pixel thực tế để hình không bị méo
+        
         float aspectRatio = (float)displayW / (float)displayH;
+        // Nếu minimize window, aspect ratio có thể NaN, cần check
+        if (displayH == 0) aspectRatio = 1.0f;
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 1000.0f);
         glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -2.0f, -8.0f)); 
@@ -285,13 +276,11 @@ void Application::Render() {
         glPolygonMode(GL_FRONT_AND_BACK, m_Wireframe ? GL_LINE : GL_FILL);
 
         int colorLoc = glGetUniformLocation(m_ShaderProgram, "u_Color");
-
         for (const auto& part : m_MeshParts) {
-            if (m_UseOverrideColor) {
+            if (m_UseOverrideColor)
                 glUniform4f(colorLoc, m_OverrideColor[0], m_OverrideColor[1], m_OverrideColor[2], 1.0f);
-            } else {
+            else
                 glUniform4f(colorLoc, part.color[0], part.color[1], part.color[2], part.color[3]);
-            }
 
             void* offsetPtr = (void*)(part.indexOffset * sizeof(unsigned int));
             glDrawElements(GL_TRIANGLES, part.indexCount, GL_UNSIGNED_INT, offsetPtr);
@@ -303,31 +292,29 @@ void Application::Render() {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     
-    // Xử lý Multi-viewport (kéo cửa sổ ImGui ra ngoài app)
+    // Xử lý Viewports (Nếu bật)
     ImGuiIO& io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
-        SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+        GLFWwindow* backup_current_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
-        SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+        glfwMakeContextCurrent(backup_current_context);
     }
 
-    SDL_GL_SwapWindow(m_Window);
+    // Swap buffers (GLFW)
+    glfwSwapBuffers(m_Window);
 }
 
 void Application::Clean() {
-    // (Giữ nguyên như cũ)
     glDeleteVertexArrays(1, &m_ModelVAO);
     glDeleteBuffers(1, &m_ModelVBO);
     glDeleteBuffers(1, &m_ModelEBO);
     glDeleteProgram(m_ShaderProgram);
 
     ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
+    ImGui_ImplGlfw_Shutdown(); // Shutdown GLFW backend
     ImGui::DestroyContext();
 
-    SDL_GL_DeleteContext(m_Context);
-    SDL_DestroyWindow(m_Window);
-    SDL_Quit();
+    glfwDestroyWindow(m_Window);
+    glfwTerminate(); // Cleanup GLFW
 }
