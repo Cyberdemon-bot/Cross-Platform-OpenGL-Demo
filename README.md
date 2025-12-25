@@ -23,6 +23,7 @@ A minimal OpenGL demo project with GLFW + Imgui + GLAD + GLM + Assimp, configure
 ## 🚀 Installation
 
 **All dependencies are already included!**  No additional installation needed.
+note: on MacOS, open terminal, go to your project's folder, run: "sudo xattr -cr vendor/assimp/lib/libassimp.dylib" to disable MacOS security mechanism on assimp .dylib file.
 
 ## 🔧 Building the Project
 
