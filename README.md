@@ -1,6 +1,6 @@
 # Cross-Platform OpenGL Demo 
 
-A minimal OpenGL demo project with SDL2 + Imgui + GLAD + GLM + Assimp, configured for both macOS and Windows using CMake.
+A minimal OpenGL demo project with GLFW + Imgui + GLAD + GLM + Assimp, configured for both macOS and Windows using CMake.
 
 ## ✨ Features
 
@@ -22,37 +22,7 @@ A minimal OpenGL demo project with SDL2 + Imgui + GLAD + GLM + Assimp, configure
 
 ## 🚀 Installation
 
-### macOS Setup
-
-You have **two options** for installing SDL2 on macOS:
-
-#### **Option 1: Using Homebrew (Recommended)**
-
-If you have Homebrew installed:
-
-```bash
-# Install SDL2
-brew install sdl2
-
-# Verify installation
-brew list sdl2
-```
-
-#### **Option 2: Manual Installation (No Homebrew)**
-
-If you don't have Homebrew or prefer manual installation:
-   - Open dmg files at vender/SDL2/framework_dmg
-   - Open Finder
-   - Press `Cmd + Shift + G`
-   - Type: `~/Library/Frameworks`
-   - If the folder doesn't exist, create it
-   - Drag `*.framework` from the mounted DMG into this folder
-   - open terminal and run sudo xattr -rd com.apple.quarantine /Library/Frameworks/SDL2.framework(for admin) or xattr -rd com.apple.quarantine ~/Library/Frameworks/SDL2.framework(personal folder) to disable macos checker on sdl framework
-   - in terminal, go to project folder and run find . -name "*.dylib" -exec xattr -d com.apple.quarantine {} \; -exec codesign --force --deep --sign - {} \; to disable macos security mechanism on all binary file.
-
-### Windows Setup
-
-**All dependencies are already included!** No additional installation needed.
+**All dependencies are already included!**  No additional installation needed.
 
 ## 🔧 Building the Project
 
@@ -67,7 +37,6 @@ cmake -S . -B build
 ```bash
 cmake -S . -B build -A x64
 ```
-This ensures 64-bit build configuration.
 
 ### Step 2: Build the Project
 
