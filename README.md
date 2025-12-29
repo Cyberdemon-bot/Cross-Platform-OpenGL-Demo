@@ -79,4 +79,4 @@ Or for Release build:
 build\Release\main.exe
 ```
 
-**Note:** on Windows, all .dll files will be automatically copied to the output directory by CMake, so the executable will run without additional setup.
+**Note:** all .dll/dylib files are automatically copied to the output directory by CMake, so the executable will run without additional setup.
