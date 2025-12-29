@@ -79,4 +79,4 @@ Or for Release build:
 build\Release\main.exe
 ```
 
-**Note:** The SDL2.dll is automatically copied to the output directory by CMake, so the executable will run without additional setup.
+**Note:** all .dll/dylib file will be automatically copied to the output directory by CMake, so the executable will run without additional setup.
